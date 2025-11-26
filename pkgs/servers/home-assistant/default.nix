@@ -4,7 +4,6 @@
   callPackage,
   fetchFromGitHub,
   fetchPypi,
-  fetchpatch,
   python313,
   replaceVars,
   ffmpeg-headless,
@@ -86,8 +85,6 @@ let
           self.pytz
         ];
       });
-
-      av = self.av_13;
 
       imageio = super.imageio.overridePythonAttrs (oldAttrs: {
         disabledTests = oldAttrs.disabledTests or [ ] ++ [
@@ -263,18 +260,6 @@ let
         };
       };
 
-      # xmltodict>=1.0 not compatible with georss-client and aio-georss-client
-      # https://github.com/exxamalte/python-aio-georss-client/issues/63
-      xmltodict = super.xmltodict.overridePythonAttrs rec {
-        version = "0.15.1";
-        src = fetchFromGitHub {
-          owner = "martinblech";
-          repo = "xmltodict";
-          tag = "v${version}";
-          hash = "sha256-j3shoXjAoAWFd+7k+0w6eoNygS2wkbhDkIq7QG+TmSM=";
-        };
-      };
-
       # internal python packages only consumed by home-assistant itself
       hass-web-proxy-lib = self.callPackage ./python-modules/hass-web-proxy-lib { };
       home-assistant-frontend = self.callPackage ./frontend.nix { };
@@ -305,13 +290,13 @@ let
   extraBuildInputs = extraPackages python.pkgs;
 
   # Don't forget to run update-component-packages.py after updating
-  hassVersion = "2025.11.3";
+  hassVersion = "2025.12.0b0";
 
 in
 python.pkgs.buildPythonApplication rec {
   pname = "homeassistant";
   version =
-    assert (componentPackages.version == hassVersion);
+    #assert (componentPackages.version == hassVersion);
     hassVersion;
   pyproject = true;
 
@@ -326,13 +311,13 @@ python.pkgs.buildPythonApplication rec {
     owner = "home-assistant";
     repo = "core";
     tag = version;
-    hash = "sha256-Wd+q2ooNguJMKnQ1uzLJtglAyBFXjBSj5hjEgY4bgzY=";
+    hash = "sha256-PNZg7MjSB/4buB2dmWDZpvE3GcI5UbPNM+BbTvv0f5A=";
   };
 
   # Secondary source is pypi sdist for translations
   sdist = fetchPypi {
     inherit pname version;
-    hash = "sha256-KxpjOPlusEHT+bRtgs/9EsIksTd4pRMKsXb7e5q+b2Q=";
+    hash = "sha256-BC/Z+62SWghuckOXJ5JY9CWabFjqvCKh4xo0FIDXlKc=";
   };
 
   build-system = with python.pkgs; [
@@ -357,12 +342,6 @@ python.pkgs.buildPythonApplication rec {
     # Patch path to ffmpeg binary
     (replaceVars ./patches/ffmpeg-path.patch {
       ffmpeg = "${lib.getExe ffmpeg-headless}";
-    })
-
-    (fetchpatch {
-      # [2025.11.2] fix matter snapshots
-      url = "https://github.com/home-assistant/core/commit/04458e01be0748c3f6c980e126d5238d1ca915b6.patch";
-      hash = "sha256-gzc0KmSZhOfHVRhIVmOTFTJMI+pAX+8LcOit4JUypyA=";
     })
   ];
 
